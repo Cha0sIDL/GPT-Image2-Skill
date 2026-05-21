@@ -38,7 +38,7 @@ Examples:
     gpt-image -p "isometric chair, minimalist" -n 4 --background opaque --format webp
 
     # Skill launcher (same implementation, installed skill-folder path)
-    uv run "$SKILL_DIR/scripts/generate.py" -p "a cat astronaut on the moon"
+    python "$SKILL_DIR/scripts/generate.py" -p "a cat astronaut on the moon"
 """
 from __future__ import annotations
 
