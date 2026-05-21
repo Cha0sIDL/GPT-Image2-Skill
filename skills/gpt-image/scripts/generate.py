@@ -1,76 +1,46 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.11"
-# dependencies = [
-#     "openai>=1.55",
-#     "python-dotenv>=1.0",
-# ]
+# dependencies = []
 # ///
 """Skill launcher for the shared gpt-image CLI.
 
 Resolution order:
-1. Repo checkout / full plugin install: import ../../../src/gpt_image_cli/cli.py.
-2. Python environment already has gpt_image_cli installed: import it directly.
-3. Shell has a gpt-image executable: delegate to it.
-4. Final fallback: uvx installs/runs the GitHub CLI package transiently.
+1. Full plugin install: import ../../../src/gpt_image_cli/cli.py.
 
-This keeps `skills/gpt-image` usable when copied as a standalone skill folder
-while preserving one canonical implementation for the installable Python CLI.
+This avoids ambient Python/PATH execution and preserves one canonical local
+implementation for the plugin CLI.
 """
 from __future__ import annotations
 
-import shutil
-import subprocess
+import importlib.util
 import sys
 from pathlib import Path
 
-_REPO_URL = "git+https://github.com/wuyoscar/gpt_image_2_skill"
-
-
-def _import_local_or_installed_main():
-    """Return gpt_image_cli.cli.main from repo-local src or installed package."""
+def _import_local_main():
+    """Return main() from the plugin's local src/gpt_image_cli/cli.py only."""
     script_path = Path(__file__).resolve()
-
-    # Full plugin/repo layout: <repo>/skills/gpt-image/scripts/generate.py
-    # Standalone skill installs do not have this sibling src/ tree, so guard it.
-    if len(script_path.parents) > 3:
-        repo_src = script_path.parents[3] / "src"
-        if (repo_src / "gpt_image_cli" / "cli.py").is_file():
-            sys.path.insert(0, str(repo_src))
-
-    try:
-        from gpt_image_cli.cli import main  # type: ignore
-    except ModuleNotFoundError:
+    if len(script_path.parents) <= 3:
         return None
-    return main
+    cli_path = script_path.parents[3] / "src" / "gpt_image_cli" / "cli.py"
+    if not cli_path.is_file():
+        return None
 
-
-def _delegate(command: list[str]) -> int:
-    """Run another CLI process with the original argv and return its exit code."""
-    completed = subprocess.run(command + sys.argv[1:], check=False)
-    return completed.returncode
+    spec = importlib.util.spec_from_file_location("gpt_image_cli.cli", cli_path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return getattr(module, "main", None)
 
 
 def main() -> int:
-    cli_main = _import_local_or_installed_main()
+    cli_main = _import_local_main()
     if cli_main is not None:
         return int(cli_main() or 0)
 
-    executable = shutil.which("gpt-image")
-    if executable:
-        return _delegate([executable])
-
-    uvx = shutil.which("uvx") or shutil.which("uv")
-    if uvx:
-        if Path(uvx).name == "uv":
-            return _delegate([uvx, "tool", "run", "--from", _REPO_URL, "gpt-image"])
-        return _delegate([uvx, "--from", _REPO_URL, "gpt-image"])
-
     print(
-        "error: could not find the gpt-image CLI backend. Install uv and run this skill "
-        "again, or install the CLI first with:\n"
-        f"  uv tool install {_REPO_URL}\n"
-        "Then retry the same command.",
+        "error: could not find the local gpt-image CLI backend. Reinstall the plugin with its local src tree, then retry the same command.",
         file=sys.stderr,
     )
     return 2

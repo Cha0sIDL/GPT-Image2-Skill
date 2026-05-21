@@ -6,16 +6,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/wuyoscar/gpt_image_2_skill/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"/></a>
-  <a href="https://github.com/wuyoscar/gpt_image_2_skill/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"/></a>
+  <a href="https://github.com/Cha0sIDL/GPT-Image2-Skill/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"/></a>
+  <a href="https://github.com/Cha0sIDL/GPT-Image2-Skill/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"/></a>
   <img src="https://img.shields.io/badge/model-gpt--image--2-purple.svg" alt="Model: gpt-image-2"/>
   <img src="https://img.shields.io/badge/python-%E2%89%A53.11-blue.svg" alt="Python ≥ 3.11"/>
 </p>
 
 <p align="center">
-  <a href="https://oosmetrics.com/repo/wuyoscar/gpt_image_2_skill"><img src="https://img.shields.io/static/v1?label=oosmetrics&message=Top%201%20Agents&color=8AA399" alt="oosmetrics Top 1 in Agents by velocity"/></a>
-  <a href="https://oosmetrics.com/repo/wuyoscar/gpt_image_2_skill"><img src="https://img.shields.io/static/v1?label=oosmetrics&message=Top%201%20LLMs&color=8798B5" alt="oosmetrics Top 1 in LLMs by velocity"/></a>
-  <a href="https://oosmetrics.com/repo/wuyoscar/gpt_image_2_skill"><img src="https://img.shields.io/static/v1?label=oosmetrics&message=Top%201%20CLI&color=A58B9D" alt="oosmetrics Top 1 in CLI by velocity"/></a>
+  <a href="https://oosmetrics.com/repo/Cha0sIDL/GPT-Image2-Skill"><img src="https://img.shields.io/static/v1?label=oosmetrics&message=Top%201%20Agents&color=8AA399" alt="oosmetrics Top 1 in Agents by velocity"/></a>
+  <a href="https://oosmetrics.com/repo/Cha0sIDL/GPT-Image2-Skill"><img src="https://img.shields.io/static/v1?label=oosmetrics&message=Top%201%20LLMs&color=8798B5" alt="oosmetrics Top 1 in LLMs by velocity"/></a>
+  <a href="https://oosmetrics.com/repo/Cha0sIDL/GPT-Image2-Skill"><img src="https://img.shields.io/static/v1?label=oosmetrics&message=Top%201%20CLI&color=A58B9D" alt="oosmetrics Top 1 in CLI by velocity"/></a>
 </p>
 
 <p align="center">
@@ -78,8 +78,8 @@ test -n "${OPENAI_API_KEY:-}" && echo "OPENAI_API_KEY is already set (value hidd
 <summary><strong>Claude Code</strong></summary>
 
 ```text
-/plugin marketplace add wuyoscar/gpt_image_2_skill
-/plugin install gpt-image@wuyoscar-skills
+/plugin marketplace add Cha0sIDL/GPT-Image2-Skill
+/plugin install gpt-image@cha0sidl-skills
 ```
 
 </details>
@@ -93,7 +93,7 @@ Open Codex and invoke the built-in installer with this GitHub skill-folder URL:
 ```text
 $skill-installer
 Install this skill from GitHub:
-https://github.com/wuyoscar/gpt_image_2_skill/tree/main/skills/gpt-image
+https://github.com/Cha0sIDL/GPT-Image2-Skill/tree/main/skills/gpt-image
 ```
 
 The installer downloads that GitHub folder and places it under your Codex skills directory, usually:
@@ -107,8 +107,8 @@ Restart Codex after installation so the new `$gpt-image` skill is loaded.
 If you prefer to install it manually, copy the skill folder into Codex's skills directory:
 
 ```bash
-git clone https://github.com/wuyoscar/gpt_image_2_skill.git
-cd gpt_image_2_skill
+git clone https://github.com/Cha0sIDL/GPT-Image2-Skill.git
+cd GPT-Image2-Skill
 
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 test -e "${CODEX_HOME:-$HOME/.codex}/skills/gpt-image" && echo "gpt-image skill already exists; stop before overwriting" && exit 1
@@ -124,11 +124,11 @@ For runtimes supported by the cross-agent `skills` installer, install the same `
 
 ```bash
 # Codex
-npx --yes skills@latest add wuyoscar/gpt_image_2_skill \
+npx --yes skills@latest add Cha0sIDL/GPT-Image2-Skill \
   --skill gpt-image --agent codex --copy
 
 # OpenClaw
-npx --yes skills@latest add wuyoscar/gpt_image_2_skill \
+npx --yes skills@latest add Cha0sIDL/GPT-Image2-Skill \
   --skill gpt-image --agent openclaw --copy
 ```
 
@@ -144,8 +144,8 @@ If your runtime is not listed by `skills@latest` yet, use the manual Agent Skill
 Set `AGENT_SKILLS_DIR` to the skills directory used by your agent runtime, then symlink this repo's skill folder into it.
 
 ```bash
-git clone https://github.com/wuyoscar/gpt_image_2_skill.git
-cd gpt_image_2_skill
+git clone https://github.com/Cha0sIDL/GPT-Image2-Skill.git
+cd GPT-Image2-Skill
 
 # Choose the skill directory for your runtime.
 # Examples:
@@ -164,11 +164,7 @@ ln -s "$PWD/skills/gpt-image" "$AGENT_SKILLS_DIR/gpt-image"
 <summary><strong>CLI</strong></summary>
 
 ```bash
-uvx --from git+https://github.com/wuyoscar/gpt_image_2_skill gpt-image -p "a cat astronaut"
-
-# or install to PATH if not already installed
-command -v gpt-image >/dev/null || uv tool install git+https://github.com/wuyoscar/gpt_image_2_skill
-gpt-image -p "a cat astronaut"
+python skills/gpt-image/scripts/generate.py -p "a cat astronaut"
 ```
 
 </details>
@@ -180,7 +176,7 @@ gpt-image -p "a cat astronaut"
 # plugin: use Claude Code's update flow
 # codex skill: rerun the installer
 # manual git clone
-cd gpt_image_2_skill && git pull
+cd GPT-Image2-Skill && git pull
 
 # CLI
 uv tool upgrade gpt-image-cli
@@ -2815,8 +2811,8 @@ Community standards:
 ## ⭐ Star History
 
 <p align="center">
-  <a href="https://www.star-history.com/#wuyoscar/gpt_image_2_skill&Date">
-    <img src="https://api.star-history.com/svg?repos=wuyoscar/gpt_image_2_skill&type=Date" alt="Star History Chart" width="100%"/>
+  <a href="https://www.star-history.com/#Cha0sIDL/GPT-Image2-Skill&Date">
+    <img src="https://api.star-history.com/svg?repos=Cha0sIDL/GPT-Image2-Skill&type=Date" alt="Star History Chart" width="100%"/>
   </a>
 </p>
 

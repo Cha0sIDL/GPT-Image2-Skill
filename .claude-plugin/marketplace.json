@@ -1,15 +1,15 @@
 {
-  "name": "wuyoscar-skills",
+  "name": "cha0sidl-skills",
   "owner": {
-    "name": "wuyoscar",
-    "url": "https://github.com/wuyoscar"
+    "name": "Cha0sIDL",
+    "url": "https://github.com/Cha0sIDL"
   },
   "plugins": [
     {
       "name": "gpt-image",
       "source": "./",
       "description": "OpenAI GPT Image 2 skill — gallery-first prompt patterns across Chinese typography, research figures, games, anime, posters, and more. Guides agents to search references, confer when useful, then call the packaged CLI.",
-      "homepage": "https://github.com/wuyoscar/gpt_image_2_skill",
+      "homepage": "https://github.com/Cha0sIDL/GPT-Image2-Skill",
       "keywords": ["gpt-image-2", "openai", "image-generation", "prompt-library"]
     }
   ]

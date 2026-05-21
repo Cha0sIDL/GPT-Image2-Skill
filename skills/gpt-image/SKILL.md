@@ -1,8 +1,8 @@
 ---
 name: gpt-image
 description: "Use this skill whenever a user asks to generate, create, draw, render, or edit images with GPT Image 2 / gpt-image-2, text-to-image, reference-image editing, inpainting, posters, typography, Chinese text, UI mockups, diagrams, or gallery prompts. Analyze the user's prompt, search the bundled Reference Gallery/craft files for matching design patterns, confer on direction when useful, then call the packaged `gpt-image` CLI or bundled `scripts/generate.py`. Do not write new image-generation code unless explicitly asked to modify this repo."
-compatibility: "Requires Python 3.11+ and either `gpt-image`, `uv`, or `uvx`. CLI/API calls read `OPENAI_API_KEY` and may incur OpenAI API charges."
-metadata: {"openclaw":{"requires":{"anyBins":["gpt-image","uv","uvx"]},"primaryEnv":"OPENAI_API_KEY","homepage":"https://github.com/wuyoscar/gpt_image_2_skill"}}
+compatibility: "Requires Python 3.11+. CLI/API calls read `OPENAI_API_KEY`/`OPENAI_BASE_URL` or `ANTHROPIC_AUTH_TOKEN`/`ANTHROPIC_BASE_URL`; calls may incur API charges."
+metadata: {"openclaw":{"requires":{"anyBins":["python"]},"primaryEnv":"ANTHROPIC_AUTH_TOKEN","homepage":"https://github.com/Cha0sIDL/GPT-Image2-Skill"}}
 ---
 
 # gpt-image
@@ -24,24 +24,17 @@ Fast path: precise prompt + explicit “generate now” → quick reference/craf
 
 ## CLI resolution
 
-Preferred call order:
+Preferred call:
 
 ```bash
-# Existing CLI on PATH
-gpt-image -p "PROMPT" [-f OUT] [-i REF...] [-m MASK] [options]
-
-# Installed skill folder; use runtime-provided skill path when available
-uv run "$SKILL_DIR/scripts/generate.py" -p "PROMPT" [-f OUT] [-i REF...] [-m MASK] [options]
-
-# Direct transient CLI when the user requested setup/one-off CLI execution
-uvx --from git+https://github.com/wuyoscar/gpt_image_2_skill gpt-image -p "PROMPT" [options]
+python "$SKILL_DIR/scripts/generate.py" -p "PROMPT" [-f OUT] [-i REF...] [-m MASK] [options]
 ```
 
-`scripts/generate.py` is a launcher: repo-local `src/gpt_image_cli` → installed `gpt-image` → PATH `gpt-image` → transient `uvx`/`uv` fallback.
+`scripts/generate.py` is a launcher for the plugin-local `src/gpt_image_cli` implementation only. It does not require `uv`, `uvx`, the OpenAI Python SDK, or a PATH-installed `gpt-image` command.
 
 ## Key and cost rules
 
-- CLI reads `OPENAI_API_KEY` from process env, then `.env`, then `~/.env` without overriding existing env; successful API calls may bill the user’s OpenAI account.
+- CLI reads `OPENAI_API_KEY`/`OPENAI_BASE_URL`, or falls back to `ANTHROPIC_AUTH_TOKEN`/`ANTHROPIC_BASE_URL`. Base URLs are normalized to include `/v1`; successful API calls may bill the configured account.
 - If host/runtime has native platform-managed image generation and the user wants that path, use the host tool instead of this CLI.
 - If `OPENAI_API_KEY` is unset, report missing key or use host-native generation when requested; do not write secrets.
 - If user wants to avoid local-key use, respect `unset OPENAI_API_KEY`; if a key exists in `.env`/`~/.env`, tell them to remove/rename it for the session rather than working around it.
