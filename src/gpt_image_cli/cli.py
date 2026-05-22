@@ -12,9 +12,8 @@ OpenAI-compatible HTTP API:
     client.images.edit(...)       — text + image(s) → image (with -i; mask via -m)
 
 Every documented parameter is exposed as a flag. Reads OPENAI_API_KEY or
-ANTHROPIC_AUTH_TOKEN from process env, then .env, then ~/.env without overriding
-existing env. Writes the returned PNG/JPEG/WebP bytes to disk and prints the
-output path(s) on stdout.
+ANTHROPIC_AUTH_TOKEN from .env, then ~/.env, then process env. Writes the
+returned PNG/JPEG/WebP bytes to disk and prints the output path(s) on stdout.
 
 Exit codes: 0 success, 1 API error, 2 bad args.
 
@@ -63,6 +62,7 @@ from typing import Any
 
 CREDENTIAL_ENV_KEYS = {"OPENAI_API_KEY", "ANTHROPIC_AUTH_TOKEN"}
 BASE_URL_ENV_KEYS = {"OPENAI_BASE_URL", "ANTHROPIC_BASE_URL"}
+ACTIVE_CREDENTIALS: set[str] = set()
 
 
 def _read_env_file(path: Path, allowed_keys: set[str]) -> dict[str, str]:
@@ -82,19 +82,18 @@ def _read_env_file(path: Path, allowed_keys: set[str]) -> dict[str, str]:
     return values
 
 
-def _load_env_chain() -> dict[str, str]:
-    """Resolve API credentials without overriding runtime-provided env.
+def _load_env_chain() -> list[dict[str, str]]:
+    """Resolve API config sources with local project config first.
 
-    Order: process env → ./.env → ~/.env. Existing process env wins so
-    hosted agents or explicit shell exports are not replaced by local files.
+    Order: ./.env → ~/.env → process env. Each source is kept separate so
+    credentials and base URLs are not mixed across precedence levels.
     """
-    initial_env = {key: value for key, value in os.environ.items() if key in CREDENTIAL_ENV_KEYS | BASE_URL_ENV_KEYS}
-    cwd_values = _read_env_file(Path.cwd() / ".env", CREDENTIAL_ENV_KEYS)
-    home_values = _read_env_file(Path.home() / ".env", CREDENTIAL_ENV_KEYS | BASE_URL_ENV_KEYS)
-    for key, value in (home_values | cwd_values).items():
-        if key not in os.environ:
-            os.environ[key] = value
-    return initial_env
+    allowed_keys = CREDENTIAL_ENV_KEYS | BASE_URL_ENV_KEYS
+    return [
+        _read_env_file(Path.cwd() / ".env", allowed_keys),
+        _read_env_file(Path.home() / ".env", allowed_keys),
+        {key: value for key, value in os.environ.items() if key in allowed_keys},
+    ]
 
 
 SIZE_SHORTCUTS: dict[str, str] = {
@@ -120,10 +119,8 @@ def slugify(text: str, max_len: int = 30) -> str:
 
 
 def default_output_path(prompt: str, extension: str) -> Path:
-    cwd = Path.cwd()
-    target_dir = cwd / "fig" if (cwd / "fig").is_dir() else cwd
     stamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    return target_dir / f"{stamp}-{slugify(prompt)}.{extension}"
+    return Path.cwd() / f"{stamp}-{slugify(prompt)}.{extension}"
 
 
 def resolve_size(value: str) -> str:
@@ -143,8 +140,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("-p", "--prompt", required=True, help="Text prompt / edit instruction.")
     p.add_argument(
         "-f", "--file",
-        help="Output path. Auto-generated as YYYY-MM-DD-HH-MM-SS-<slug>.<ext> if omitted "
-             "(written to ./fig/ if that dir exists, else ./).",
+        help="Output path. Auto-generated as YYYY-MM-DD-HH-MM-SS-<slug>.<ext> in the current working directory if omitted.",
     )
     p.add_argument(
         "-i", "--image", action="append", type=Path, default=None,
@@ -248,22 +244,30 @@ class ApiRequestError(Exception):
 
 def _redact_secrets(text: str) -> str:
     redacted = text
-    for key in CREDENTIAL_ENV_KEYS:
-        value = os.environ.get(key)
-        if value:
-            redacted = redacted.replace(value, "[REDACTED]").replace(f"Bearer {value}", "Bearer [REDACTED]")
+    env_credentials = {
+        os.environ[key] for key in CREDENTIAL_ENV_KEYS if os.environ.get(key)
+    }
+    for value in ACTIVE_CREDENTIALS | env_credentials:
+        redacted = redacted.replace(value, "[REDACTED]").replace(
+            f"Bearer {value}", "Bearer [REDACTED]"
+        )
     return redacted
 
 
-def _resolve_api_config(initial_env: dict[str, str]) -> tuple[str | None, str | None, str | None]:
-    if initial_env.get("OPENAI_API_KEY"):
-        return initial_env["OPENAI_API_KEY"], initial_env.get("OPENAI_BASE_URL"), "openai"
-    if initial_env.get("ANTHROPIC_AUTH_TOKEN"):
-        return initial_env["ANTHROPIC_AUTH_TOKEN"], initial_env.get("ANTHROPIC_BASE_URL"), "anthropic"
-    if os.environ.get("OPENAI_API_KEY"):
-        return os.environ["OPENAI_API_KEY"], os.environ.get("OPENAI_BASE_URL"), "openai"
-    if os.environ.get("ANTHROPIC_AUTH_TOKEN"):
-        return os.environ["ANTHROPIC_AUTH_TOKEN"], os.environ.get("ANTHROPIC_BASE_URL"), "anthropic"
+def _resolve_api_config(
+    env_sources: list[dict[str, str]],
+) -> tuple[str | None, str | None, str | None]:
+    for values in env_sources:
+        if values.get("OPENAI_API_KEY"):
+            ACTIVE_CREDENTIALS.add(values["OPENAI_API_KEY"])
+            return values["OPENAI_API_KEY"], values.get("OPENAI_BASE_URL"), "openai"
+        if values.get("ANTHROPIC_AUTH_TOKEN"):
+            ACTIVE_CREDENTIALS.add(values["ANTHROPIC_AUTH_TOKEN"])
+            return (
+                values["ANTHROPIC_AUTH_TOKEN"],
+                values.get("ANTHROPIC_BASE_URL"),
+                "anthropic",
+            )
     return None, None, None
 
 
@@ -440,8 +444,8 @@ def write_outputs(data: list[Any], out_path: Path, n: int) -> list[Path]:
 def main() -> int:
     args = parse_args()
 
-    initial_env = _load_env_chain()
-    api_key, base_url, provider = _resolve_api_config(initial_env)
+    env_sources = _load_env_chain()
+    api_key, base_url, provider = _resolve_api_config(env_sources)
     if not api_key:
         print(
             "error: OPENAI_API_KEY not set and ANTHROPIC_AUTH_TOKEN fallback not available. "

@@ -34,7 +34,7 @@ python "$SKILL_DIR/scripts/generate.py" -p "PROMPT" [-f OUT] [-i REF...] [-m MAS
 
 ## Key and cost rules
 
-- CLI reads `OPENAI_API_KEY`/`OPENAI_BASE_URL`, or falls back to `ANTHROPIC_AUTH_TOKEN`/`ANTHROPIC_BASE_URL`. Base URLs are normalized to include `/v1`; successful API calls may bill the configured account.
+- CLI reads `OPENAI_API_KEY`/`OPENAI_BASE_URL`, or falls back to `ANTHROPIC_AUTH_TOKEN`/`ANTHROPIC_BASE_URL`, in this order: current directory `.env`, then `~/.env`, then process env. Base URLs are normalized to include `/v1`; successful API calls may bill the configured account.
 - If host/runtime has native platform-managed image generation and the user wants that path, use the host tool instead of this CLI.
 - If `OPENAI_API_KEY` is unset, report missing key or use host-native generation when requested; do not write secrets.
 - If user wants to avoid local-key use, respect `unset OPENAI_API_KEY`; if a key exists in `.env`/`~/.env`, tell them to remove/rename it for the session rather than working around it.

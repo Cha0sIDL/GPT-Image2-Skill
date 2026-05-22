@@ -184,9 +184,9 @@ uv tool upgrade gpt-image-cli
 
 </details>
 
-按 process env、`.env`、`~/.env` 的顺序读取 `OPENAI_API_KEY`，且不会覆盖已经设置好的环境变量。
+按当前目录 `.env`、`~/.env`、process env 的顺序读取 `OPENAI_API_KEY` / `OPENAI_BASE_URL`，或 `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_BASE_URL`。
 
-> **Agent 与 API Key 提醒。** 我们发现 Codex 其实自带生成 Image 的 skill，但它是黑盒的，无法在这里修改；Codex 用户如果更想走内置能力，可以自行切换。也感谢相关 issue 里提到的方法：如果你不想让 agent accidentally 调用你的 OpenAI API Key，直接在调用本地 CLI/Skill 前运行 `unset OPENAI_API_KEY` 即可。
+> **Agent 与 API Key 提醒。** 我们发现 Codex 其实自带生成 Image 的 skill，但它是黑盒的，无法在这里修改；Codex 用户如果更想走内置能力，可以自行切换。也感谢相关 issue 里提到的方法：如果你不想让 agent accidentally 调用你的 OpenAI API Key，请移除或重命名当前 `.env` / `~/.env` 里的 key，并在调用本地 CLI/Skill 前运行 `unset OPENAI_API_KEY`。
 
 ---
 
@@ -231,7 +231,7 @@ gpt-image -p "将天空替换为极光" \
 | 标志 | 取值 | 默认值 | 适用范围 | 备注 |
 |---|---|---|---|---|
 | `-p, --prompt` | 字符串 | — 必需 | 两者 | 完整的提示文本。 |
-| `-f, --file` | 路径 | `./fig/YYYY-MM-DD-HH-MM-SS-<slug>.png` | 两者 | 明确输出路径。 |
+| `-f, --file` | 路径 | `./YYYY-MM-DD-HH-MM-SS-<slug>.png` | 两者 | 明确输出路径。 |
 | `-i, --image` | 路径（可重复） | — | 编辑 | 存在时走 `/v1/images/edits` 路由。 |
 | `-m, --mask` | 路径（PNG，带alpha通道） | — | 编辑 | 不透明 = 保留，透明 = 重新生成。需要 `-i`。 |
 | `--input-fidelity` | `low` · `high` | — | 编辑 | 在 `gpt-image-1`/`1.5` 支持；`gpt-image-2` 会拒绝这个参数，所以 CLI 会在本地直接丢弃它。 |

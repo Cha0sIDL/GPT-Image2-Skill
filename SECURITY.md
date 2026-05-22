@@ -20,5 +20,5 @@ When reporting, include:
 ## Secret handling
 
 - Never commit `OPENAI_API_KEY`, `.env`, or other credentials.
-- The CLI reads `OPENAI_API_KEY` from process env, then `.env`, then `~/.env` without overriding an already-set env var.
+- The CLI reads `OPENAI_API_KEY` / `OPENAI_BASE_URL`, or `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_BASE_URL`, from the current directory `.env`, then `~/.env`, then process env.
 - Generated examples and issue reports should not include private prompts, private images, or API response bodies containing secrets.
