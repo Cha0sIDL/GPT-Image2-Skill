@@ -187,6 +187,10 @@ def parse_args() -> argparse.Namespace:
         help="0-100 compression level for jpeg/webp. Ignored for png.",
     )
     p.add_argument(
+        "--timeout", type=int, default=300,
+        help="HTTP request timeout in seconds. Default 300.",
+    )
+    p.add_argument(
         "--user", default=None,
         help="Optional end-user identifier forwarded to OpenAI for abuse tracking.",
     )
@@ -272,9 +276,10 @@ def _resolve_api_config(
 
 
 class OpenAICompatibleClient:
-    def __init__(self, api_key: str, base_url: str | None = None) -> None:
+    def __init__(self, api_key: str, base_url: str | None = None, timeout: int = 300) -> None:
         self.base_url = _validate_base_url(base_url or "https://api.openai.com/v1")
         self.api_key = api_key
+        self.timeout = timeout
         self.images = ImageApi(self)
 
     @property
@@ -293,7 +298,7 @@ class OpenAICompatibleClient:
             },
             method="POST",
         )
-        return _open_json(request)
+        return _open_json(request, self.timeout)
 
     def request_multipart(self, path: str, fields: dict[str, Any], files: list[tuple[str, Any]]) -> Any:
         boundary = "----gptimageboundary"
@@ -307,12 +312,12 @@ class OpenAICompatibleClient:
             },
             method="POST",
         )
-        return _open_json(request)
+        return _open_json(request, self.timeout)
 
 
-def _open_json(request: urllib.request.Request) -> Any:
+def _open_json(request: urllib.request.Request, timeout: int = 300) -> Any:
     try:
-        with urllib.request.urlopen(request, timeout=300) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         body = _redact_secrets(e.read().decode("utf-8", errors="replace"))
@@ -468,7 +473,7 @@ def main() -> int:
     out_path = Path(args.file).expanduser().resolve() if args.file else default_output_path(args.prompt, ext)
 
     try:
-        client = OpenAICompatibleClient(api_key=api_key, base_url=base_url)
+        client = OpenAICompatibleClient(api_key=api_key, base_url=base_url, timeout=args.timeout)
         result = call_edit(client, args) if args.image else call_generate(client, args)
     except (ApiRequestError, ValueError) as e:
         print(f"error: {type(e).__name__}: {e}", file=sys.stderr)
